@@ -18,12 +18,12 @@ sns.set_style("white")
 # %matplotlib inline
 
 # load dataset
-data = pd.read_csv('data/data.csv').drop(columns={'Unnamed: 0'})
+data = pd.read_csv('data/data.csv').drop(columns={'Unnamed: 0', 'artist', 'song_title'})
 data.describe()
-
+X = data.drop(columns={'target'})
+y = data.target
 #split data
-train, test = train_test_split(data, test_size = 0.30, shuffle=True)
-print("Training samples: {}; Test samples: {}".format(len(train), len(test)))
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.30, shuffle=True)
 
 # parsing data on different classes
 pos_tempo = data[data['target'] == 1]['tempo']
@@ -146,26 +146,35 @@ ax17.set_title("Song Instrumentalness Like Distribution")
 ax17 = fig2.add_subplot(339)
 neg_instrumentalness.hist(alpha=0.5, bins=30)
 
-# Build a simple Decision Tree Classifier based on a set of features¶
-c = DecisionTreeClassifier(min_samples_leaf=20, random_state=10)
 
 features = ["valence", "energy", "danceability", "speechiness", "acousticness", "instrumentalness", "loudness","duration_ms","liveness","tempo","time_signature","mode","key"]
 
-X_train = train[features]
-y_train = train["target"]
 
-X_test = test[features]
-y_test = test["target"]
 
-dt = c.fit(X_train, y_train)
+# Build a simple Decision Tree Classifier based on a set of features¶
+clf = DecisionTreeClassifier(min_samples_leaf=26, random_state=15)
+clf.fit(X_train, y_train)
 
 # Run prediction on test data
-y_pred = c.predict(X_test)
+y_pred = clf.predict(X_test)
 
 # calc Accuracy
 score = accuracy_score(y_test, y_pred) * 100
 rounded_score = round(score, 1)
 print("Decision Tree Classifier Accuracy: {}%".format(rounded_score))
+
+# build Logistic regression Classifier
+clf = LogisticRegression(C=0.2682695795279725, penalty='l1')
+
+clf.fit(X_train, y_train)
+
+# Run prediction on test data
+y_pred = clf.predict(X_test)
+
+# calc Accuracy
+score = accuracy_score(y_test, y_pred) * 100
+rounded_score = round(score, 1)
+print("Logistic Regression Classifier Accuracy: {}%".format(rounded_score))
 
 #   build Random forest classifier
 from sklearn.ensemble import RandomForestClassifier
@@ -197,22 +206,5 @@ y_pred = clf.predict(X_test)
 score = accuracy_score(y_test, forest_y_pred) * 100
 rounded_score = round(score, 1)
 print("AdaBoost Accuracy: {}%".format(rounded_score))
-
-#   build Ada Boost Classifier
-from sklearn.ensemble import VotingClassifier
-
-# clf1 = LogisticRegression()
-# clf2 = RandomForestClassifier()
-# clf3 = GaussianNB()
-clf1 = GradientBoostingClassifier(n_estimators = 100)
-clf2 = RandomForestClassifier(n_estimators = 100)
-
-clf = VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ], voting='soft') #('gnb', clf3)
-clf.fit(X_train, y_train)
-
-forest_y_pred = clf.predict(X_test)
-score = accuracy_score(y_test, forest_y_pred) * 100
-rounded_score = round(score, 1)
-print("Voting Classifier Accuracy: {}%".format(rounded_score))
 
 
